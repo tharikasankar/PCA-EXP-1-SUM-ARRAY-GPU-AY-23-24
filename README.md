@@ -33,8 +33,84 @@ Developed by : THARIKA S
 
 RegisterNumber : 212222230159
 ```
+%%cuda
+#include <sys/time.h>
 #include <cuda_runtime.h>
 #include <stdio.h>
+
+#ifndef _COMMON_H
+#define _COMMON_H
+
+#define CHECK(call)                                                            \
+{                                                                              \
+    const cudaError_t error = call;                                            \
+    if (error != cudaSuccess)                                                  \
+    {                                                                          \
+        fprintf(stderr, "Error: %s:%d, ", __FILE__, __LINE__);                 \
+        fprintf(stderr, "code: %d, reason: %s\n", error,                       \
+                cudaGetErrorString(error));                                    \
+        exit(1);                                                               \
+    }                                                                          \
+}
+
+#define CHECK_CUBLAS(call)                                                     \
+{                                                                              \
+    cublasStatus_t err;                                                        \
+    if ((err = (call)) != CUBLAS_STATUS_SUCCESS)                               \
+    {                                                                          \
+        fprintf(stderr, "Got CUBLAS error %d at %s:%d\n", err, __FILE__,       \
+                __LINE__);                                                     \
+        exit(1);                                                               \
+    }                                                                          \
+}
+
+#define CHECK_CURAND(call)                                                     \
+{                                                                              \
+    curandStatus_t err;                                                        \
+    if ((err = (call)) != CURAND_STATUS_SUCCESS)                               \
+    {                                                                          \
+        fprintf(stderr, "Got CURAND error %d at %s:%d\n", err, __FILE__,       \
+                __LINE__);                                                     \
+        exit(1);                                                               \
+    }                                                                          \
+}
+
+#define CHECK_CUFFT(call)                                                      \
+{                                                                              \
+    cufftResult err;                                                           \
+    if ( (err = (call)) != CUFFT_SUCCESS)                                      \
+    {                                                                          \
+        fprintf(stderr, "Got CUFFT error %d at %s:%d\n", err, __FILE__,        \
+                __LINE__);                                                     \
+        exit(1);                                                               \
+    }                                                                          \
+}
+
+#define CHECK_CUSPARSE(call)                                                   \
+{                                                                              \
+    cusparseStatus_t err;                                                      \
+    if ((err = (call)) != CUSPARSE_STATUS_SUCCESS)                             \
+    {                                                                          \
+        fprintf(stderr, "Got error %d at %s:%d\n", err, __FILE__, __LINE__);   \
+        cudaError_t cuda_err = cudaGetLastError();                             \
+        if (cuda_err != cudaSuccess)                                           \
+        {                                                                      \
+            fprintf(stderr, "  CUDA error \"%s\" also detected\n",             \
+                    cudaGetErrorString(cuda_err));                             \
+        }                                                                      \
+        exit(1);                                                               \
+    }                                                                          \
+}
+
+inline double seconds()
+{
+    struct timeval tp;
+    struct timezone tzp;
+    int i = gettimeofday(&tp, &tzp);
+    return ((double)tp.tv_sec + (double)tp.tv_usec * 1.e-6);
+}
+
+#endif // _COMMON_H
 
 void checkResult(float *hostRef, float *gpuRef, const int N)
 {
@@ -71,7 +147,6 @@ void initialData(float *ip, int size)
 
     return;
 }
-
 void sumArraysOnHost(float *A, float *B, float *C, const int N)
 {
     for (int idx = 0; idx < N; idx++)
@@ -80,13 +155,10 @@ void sumArraysOnHost(float *A, float *B, float *C, const int N)
     }
 }
 
-
 __global__ void sumArraysOnGPU(float *A, float *B, float *C, const int N){
     int i = blockIdx.x*blockDim.x+threadIdx.x;
     if (i<N) C[i] = A[i] + B[i];
 }
-
-
 
 int main(int argc, char **argv)
 {
@@ -173,12 +245,11 @@ int main(int argc, char **argv)
     free(gpuRef);
 
     return(0);
-}
+}    
 ```
 
 ## OUTPUT:
-![image](https://github.com/tharikasankar/PCA-EXP-1-SUM-ARRAY-GPU-AY-23-24/assets/119475507/4db7de86-c8f0-4a05-8deb-0d7af97b25f5)
-
+![image](https://github.com/tharikasankar/PCA-EXP-1-SUM-ARRAY-GPU-AY-23-24/assets/119475507/10ec7e82-b56c-4a3a-8e6c-103ceff54fe0)
 
 ## RESULT:
 Thus, Implementation of sum arrays on host and device is done in nvcc cuda using random number.
